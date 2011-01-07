@@ -52,13 +52,13 @@ class Badge(models.Model):
 
         # Check if the laureate already has this badge
         try:
-            laureate_badges = BadgeToLaureate.objects.get(laureate_content_type=laureate_ctype,
-                                                          laureate_object_id=laureate.pk)
+            laureate_badges = BadgeToLaureate.objects.filter(badge=self,
+                                                             laureate_content_type=laureate_ctype,
+                                                             laureate_object_id=laureate.pk)
 
-            has_badge = self in laureate_badges.all()
+            has_badge = True
         except BadgeToLaureate.DoesNotExist, e:
             has_badge = False
-
 
         if self.meta_badge.one_time_only and has_badge:
             return False
