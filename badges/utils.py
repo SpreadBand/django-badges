@@ -4,7 +4,7 @@ from django.db.models.signals import post_save
 from django.contrib.auth.models import User
 
 from badges.models import Badge as BadgeModel
-from badges.models import BadgeToUser, LEVEL_CHOICES
+from badges.models import BadgeToLaureate, LEVEL_CHOICES
 
 
 class RequiresUserOrProgress(Exception): pass
@@ -29,7 +29,7 @@ def badge_count(user_or_qs=None):
     Uses a single database query.
     """
 
-    badge_counts = BadgeToUser.objects.all()
+    badge_counts = BadgeToLaureate.objects.all()
     if isinstance(user_or_qs, User):
         badge_counts = badge_counts.filter(user=user_or_qs)
     elif isinstance(user_or_qs, models.QuerySet):
@@ -50,8 +50,7 @@ def badge_count(user_or_qs=None):
     return [get_badge_count(level_choice[0]) for level_choice in LEVEL_CHOICES]
         
 
-class MetaBadgeMeta(type):
-    
+class MetaBadgeMeta(type):    
     def __new__(cls, name, bases, attrs):
         new_badge = super(MetaBadgeMeta, cls).__new__(cls, name, bases, attrs)
         parents = [b for b in bases if isinstance(b, MetaBadgeMeta)]
@@ -68,7 +67,7 @@ class MetaBadge(object):
     model = models.Model
 
     progress_start = 0
-    progress_finish = 1
+    progress_end = 1
     
     def __init__(self):
         # whenever the server is reloaded, the badge will be initialized and
@@ -89,22 +88,26 @@ class MetaBadge(object):
     def get_user(self, instance):
         return instance.user
 
-    def get_progress(self, user):
-        if BadgeToUser.objects.filter(user=user, badge=self.badge).count():
+    def get_progress(self, laureate):
+        if BadgeToLaureate.objects.filter(badge=self.badge,
+                                          laureate_content_type=laureate_ctype,
+                                          laureate_object_id=laureate.pk).count():
             return 1
         return 0
     
-    def get_progress_percentage(self, progress=None, user=None):
-        if user is None and progress is None:
+    def get_progress_percentage(self, candidate=None, progress=None):
+        if candidate is None and progress is None:
             raise RequiresUserOrProgress("This method requires either a user or progress keyword argument")
 
         if not progress:
-            progress = self.get_progress(user)
+            progress = self.get_progress(candidate)
 
         progress = min(progress, self.progress_end)
+
+        print "prog=", progress
         
         # multiply by a float to get floating point precision
-        return (100.0 * progress) / (self.progress_finish - self.progress_start)
+        return (100.0 * progress) / (self.progress_end - self.progress_start)
     
     def _keep_badge_updated(self):
         if getattr(self, 'badge', False):
@@ -117,5 +120,5 @@ class MetaBadge(object):
     
     def award_ceremony(self, instance):
         if self._test_conditions(instance):
-            user = self.get_user(instance)
-            self.badge.award_to(user)
+            laureate = self.get_user(instance)
+            self.badge.award_to(laureate)
