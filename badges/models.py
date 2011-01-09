@@ -48,7 +48,6 @@ class Badge(models.Model):
         return reverse('badge_detail', kwargs={'slug': self.id})
     
     def award_to(self, laureate):
-        print "AYYA"
         laureate_ctype = ContentType.objects.get_for_model(laureate)
 
         # Check if the laureate already has this badge
@@ -104,6 +103,9 @@ class BadgeToLaureate(models.Model):
 
     laureate_content_type = models.ForeignKey(ContentType)
     laureate_object_id = models.PositiveIntegerField()
-    laureate = generic.GenericForeignKey('laureate_content_type', 'laureate_id')
+    laureate = generic.GenericForeignKey('laureate_content_type', 'laureate_object_id')
     
     created = models.DateTimeField(default=datetime.now)
+
+    def __unicode__(self):
+        return "%s for %s (%s)" % (self.badge.meta_badge.title, self.laureate, self.laureate_content_type)
