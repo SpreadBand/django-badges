@@ -104,8 +104,6 @@ class MetaBadge(object):
 
         progress = min(progress, self.progress_end)
 
-        print "prog=", progress
-        
         # multiply by a float to get floating point precision
         return (100.0 * progress) / (self.progress_end - self.progress_start)
     

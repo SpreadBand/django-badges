@@ -18,9 +18,9 @@ def level_title(level):
     return level_choices[level]
 
 @register.filter('badge_count')
-def _badge_count(user_or_qs):
-    return badge_count(user_or_qs)
+def _badge_count(candidate_or_qs):
+    return badge_count(candidate_or_qs)
 
 @register.filter
-def number_awarded(badge, user_or_qs=None):
-    return badge.number_awarded(user_or_qs)
+def number_awarded(badge, candidate_or_qs=None):
+    return badge.number_awarded(candidate_or_qs)

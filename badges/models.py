@@ -21,7 +21,7 @@ else:
 
 class Badge(models.Model):
     id = models.CharField(max_length=255, primary_key=True)
-    # user = models.ManyToManyField(User, related_name="badges", through='BadgeToUser')
+
     level = models.CharField(max_length=1, choices=LEVEL_CHOICES)
     
     icon = models.ImageField(upload_to='badge_images')
@@ -48,17 +48,19 @@ class Badge(models.Model):
         return reverse('badge_detail', kwargs={'slug': self.id})
     
     def award_to(self, laureate):
+        print "AYYA"
         laureate_ctype = ContentType.objects.get_for_model(laureate)
 
         # Check if the laureate already has this badge
-        try:
-            laureate_badges = BadgeToLaureate.objects.filter(badge=self,
-                                                             laureate_content_type=laureate_ctype,
-                                                             laureate_object_id=laureate.pk)
+        has_badge = False
 
+        laureate_badges = BadgeToLaureate.objects.filter(badge=self,
+                                                         laureate_content_type=laureate_ctype,
+                                                         laureate_object_id=laureate.pk)
+        
+        if laureate_badges.count():
             has_badge = True
-        except BadgeToLaureate.DoesNotExist, e:
-            has_badge = False
+
 
         if self.meta_badge.one_time_only and has_badge:
             return False
@@ -78,18 +80,22 @@ class Badge(models.Model):
                                               laureate_content_type=laureate_ctype,
                                               laureate_object_id=laureate.pk).count()
 
-    def number_awarded(self, user_or_qs=None):
+    def number_awarded(self, candidate_or_qs=None):
         """
         Gives the number awarded total. Pass in an argument to
         get the number per user, or per queryset.
         """
-        kwargs = {'badge':self}
-        if user_or_qs is None:
-            pass
-        elif isinstance(user_or_qs, User):
-            kwargs.update(dict(user=user_or_qs))
+        kwargs = {'badge': self}
+
+        if isinstance(candidate_or_qs, models.query.QuerySet):
+            laureate_ctype = ContentType.objects.get_for_model(candidate_or_qs.model)
+            kwargs.update(dict(laureate_object_id__in=candidate_or_qs,
+                               laureate_content_type=laureate_ctype))
         else:
-            kwargs.update(dict(user__in=user_or_qs))
+            laureate_ctype = ContentType.objects.get_for_model(candidate_or_qs)
+            kwargs.update(dict(laureate_object_id=candidate_or_qs.pk,
+                               laureate_content_type=laureate_ctype))
+
         return BadgeToLaureate.objects.filter(**kwargs).count()
 
 
