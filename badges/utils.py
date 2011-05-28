@@ -94,6 +94,7 @@ class MetaBadge(object):
                                           laureate_object_id=laureate.pk).count():
             return 1
         return 0
+
     
     def get_progress_percentage(self, candidate=None, progress=None):
         if candidate is None and progress is None:
@@ -106,6 +107,7 @@ class MetaBadge(object):
 
         # multiply by a float to get floating point precision
         return (100.0 * progress) / (self.progress_end - self.progress_start)
+
     
     def _keep_badge_updated(self):
         if getattr(self, 'badge', False):
